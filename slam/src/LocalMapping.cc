@@ -131,7 +131,7 @@ namespace ORB_SLAM2
     void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
     {
         unique_lock<mutex> lock(mMutexNewKFs);
-        mlNewKeyFrames.push_back(pKF);
+        mlNewKeyFrames.insert({ pKF,0 });
         mbAbortBA = true;
     }
 
@@ -145,8 +145,8 @@ namespace ORB_SLAM2
     {
         {
             unique_lock<mutex> lock(mMutexNewKFs);
-            mpCurrentKeyFrame = mlNewKeyFrames.front();
-            mlNewKeyFrames.pop_front();
+            mpCurrentKeyFrame = mlNewKeyFrames.begin()->first;
+            mlNewKeyFrames.erase(mlNewKeyFrames.begin());
         }
 
         // Compute Bags of Words structures
@@ -170,7 +170,7 @@ namespace ORB_SLAM2
                     }
                     else // this can only happen for new stereo points inserted by the Tracking
                     {
-                        mlpRecentAddedMapPoints.push_back(pMP);
+                        mlpRecentAddedMapPoints.insert({ pMP ,0 });
                     }
                 }
             }
@@ -186,46 +186,33 @@ namespace ORB_SLAM2
     void LocalMapping::MapPointCulling()
     {
         // Check Recent Added MapPoints
-        list<MapPoint *>::iterator lit = mlpRecentAddedMapPoints.begin();
+        unordered_map<MapPoint *,int>::iterator lit = mlpRecentAddedMapPoints.begin();
         const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
-
-        int nThObs;
-        if (mbMonocular)
-            nThObs = 2;
-        else
-            nThObs = 3;
-        const int cnThObs = nThObs;
+        const int cnThObs = mbMonocular ? 2 : 3;
 
         while (lit != mlpRecentAddedMapPoints.end())
         {
-            MapPoint *pMP = *lit;
-            if (pMP->isBad())
-            {
+            MapPoint* pMP = lit->first;
+
+            if (pMP->isBad()) {
                 lit = mlpRecentAddedMapPoints.erase(lit);
             }
-            else if (pMP->GetFoundRatio() < 0.25f)
-            {
+            else if (pMP->GetFoundRatio() < 0.25f || ((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 2 && pMP->Observations() <= cnThObs) {
                 pMP->SetBadFlag();
                 lit = mlpRecentAddedMapPoints.erase(lit);
             }
-            else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 2 && pMP->Observations() <= cnThObs)
-            {
-                pMP->SetBadFlag();
+            else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 3) {
                 lit = mlpRecentAddedMapPoints.erase(lit);
             }
-            else if (((int)nCurrentKFid - (int)pMP->mnFirstKFid) >= 3)
-                lit = mlpRecentAddedMapPoints.erase(lit);
-            else
+             else
                 lit++;
         }
-    }
+   }
 
     void LocalMapping::CreateNewMapPoints()
     {
         // Retrieve neighbor keyframes in covisibility graph
-        int nn = 10;
-        if (mbMonocular)
-            nn = 20;
+        int nn = mbMonocular ? 20 : 10;
         const vector<KeyFrame *> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
         ORBmatcher matcher(0.6, false);
@@ -434,7 +421,9 @@ namespace ORB_SLAM2
                 cv::Mat normal2 = x3D - Ow2;
                 float dist2 = cv::norm(normal2);
 
-                if (dist1 == 0 || dist2 == 0)
+                if (dist1 == 0)
+                    continue;
+                else if (dist2 == 0)
                     continue;
 
                 const float ratioDist = dist2 / dist1;
@@ -459,7 +448,7 @@ namespace ORB_SLAM2
                 pMP->UpdateNormalAndDepth();
 
                 mpMap->AddMapPoint(pMP);
-                mlpRecentAddedMapPoints.push_back(pMP);
+                mlpRecentAddedMapPoints.insert({ pMP,0 });
 
                 nnew++;
             }
@@ -469,12 +458,10 @@ namespace ORB_SLAM2
     void LocalMapping::SearchInNeighbors()
     {
         // Retrieve neighbor keyframes
-        int nn = 10;
-        if (mbMonocular)
-            nn = 20;
+        int nn = mbMonocular ? 20 : 10;
         const vector<KeyFrame *> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
         vector<KeyFrame *> vpTargetKFs;
-        for (vector<KeyFrame *>::const_iterator vit = vpNeighKFs.begin(), vend = vpNeighKFs.end(); vit != vend; vit++)
+        for (auto vit = vpNeighKFs.begin(), vend = vpNeighKFs.end(); vit != vend; vit++) 
         {
             KeyFrame *pKFi = *vit;
             if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId)
@@ -484,7 +471,7 @@ namespace ORB_SLAM2
 
             // Extend to some second neighbors
             const vector<KeyFrame *> vpSecondNeighKFs = pKFi->GetBestCovisibilityKeyFrames(5);
-            for (vector<KeyFrame *>::const_iterator vit2 = vpSecondNeighKFs.begin(), vend2 = vpSecondNeighKFs.end(); vit2 != vend2; vit2++)
+            for (auto vit2 = vpSecondNeighKFs.begin(), vend2 = vpSecondNeighKFs.end(); vit2 != vend2; vit2++)
             {
                 KeyFrame *pKFi2 = *vit2;
                 if (pKFi2->isBad() || pKFi2->mnFuseTargetForKF == mpCurrentKeyFrame->mnId || pKFi2->mnId == mpCurrentKeyFrame->mnId)
@@ -496,7 +483,7 @@ namespace ORB_SLAM2
         // Search matches by projection from current KF in target KFs
         ORBmatcher matcher;
         vector<MapPoint *> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-        for (vector<KeyFrame *>::iterator vit = vpTargetKFs.begin(), vend = vpTargetKFs.end(); vit != vend; vit++)
+        for (auto vit = vpTargetKFs.begin(), vend = vpTargetKFs.end(); vit != vend; vit++)
         {
             KeyFrame *pKFi = *vit;
 
@@ -507,13 +494,13 @@ namespace ORB_SLAM2
         vector<MapPoint *> vpFuseCandidates;
         vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
 
-        for (vector<KeyFrame *>::iterator vitKF = vpTargetKFs.begin(), vendKF = vpTargetKFs.end(); vitKF != vendKF; vitKF++)
+        for (auto vitKF = vpTargetKFs.begin(), vendKF = vpTargetKFs.end(); vitKF != vendKF; vitKF++)
         {
             KeyFrame *pKFi = *vitKF;
 
             vector<MapPoint *> vpMapPointsKFi = pKFi->GetMapPointMatches();
 
-            for (vector<MapPoint *>::iterator vitMP = vpMapPointsKFi.begin(), vendMP = vpMapPointsKFi.end(); vitMP != vendMP; vitMP++)
+            for (auto vitMP = vpMapPointsKFi.begin(), vendMP = vpMapPointsKFi.end(); vitMP != vendMP; vitMP++)
             {
                 MapPoint *pMP = *vitMP;
                 if (!pMP)
@@ -605,9 +592,7 @@ namespace ORB_SLAM2
             return;
         mbStopped = false;
         mbStopRequested = false;
-        for (list<KeyFrame *>::iterator lit = mlNewKeyFrames.begin(), lend = mlNewKeyFrames.end(); lit != lend; lit++)
-            delete *lit;
-        mlNewKeyFrames.clear();
+        mlNewKeyFrames.clear(); //rempved the delete, in unordered_map we dont need to take care of dellocatoion memory
 
         cout << "Local Mapping RELEASE" << endl;
     }
@@ -693,9 +678,9 @@ namespace ORB_SLAM2
                         if (pMP->Observations() > thObs)
                         {
                             const int &scaleLevel = pKF->mvKeysUn[i].octave;
-                            const map<KeyFrame *, size_t> observations = pMP->GetObservations();
+                            const unordered_map<KeyFrame *, size_t> observations = pMP->GetObservations();
                             int nObs = 0;
-                            for (map<KeyFrame *, size_t>::const_iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
+                            for (auto mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
                             {
                                 KeyFrame *pKFi = mit->first;
                                 if (pKFi == pKF)

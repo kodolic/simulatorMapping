@@ -1034,7 +1034,7 @@ namespace ORB_SLAM2
 
         // For all map points in keyframe check in which other keyframes are they seen
         // Increase counter for those keyframes
-        for (vector<MapPoint *>::iterator vit = vpMP.begin(), vend = vpMP.end(); vit != vend; vit++)
+        for (auto vit = vpMP.begin(), vend = vpMP.end(); vit != vend; vit++)
         {
             MapPoint *pMP = *vit;
 
@@ -1044,9 +1044,9 @@ namespace ORB_SLAM2
             if (pMP->isBad())
                 continue;
 
-            map<KeyFrame *, size_t> observations = pMP->GetObservations();
+            unordered_map<KeyFrame *, size_t> observations = pMP->GetObservations();
 
-            for (map<KeyFrame *, size_t>::iterator mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
+            for (auto mit = observations.begin(), mend = observations.end(); mit != mend; mit++)
             {
                 if (mit->first->mnId == mnId)
                     continue;
