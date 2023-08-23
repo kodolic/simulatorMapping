@@ -365,7 +365,7 @@ namespace ORB_SLAM2
         vector<KeyFrame*> vpLoopConnectedKFs = mpMatchedKF->GetVectorCovisibleKeyFrames();
         vpLoopConnectedKFs.push_back(mpMatchedKF);
         mvpLoopMapPoints.clear();
-        for (vector<KeyFrame*>::iterator vit = vpLoopConnectedKFs.begin(); vit != vpLoopConnectedKFs.end(); vit++)
+        for (auto vit = vpLoopConnectedKFs.begin(); vit != vpLoopConnectedKFs.end(); vit++)
         {
             KeyFrame* pKF = *vit;
             vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
@@ -451,7 +451,7 @@ namespace ORB_SLAM2
             // Get Map Mutex
             unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
 
-            for (vector<KeyFrame*>::iterator vit = mvpCurrentConnectedKFs.begin(), vend = mvpCurrentConnectedKFs.end(); vit != vend; vit++)
+            for (auto vit = mvpCurrentConnectedKFs.begin(), vend = mvpCurrentConnectedKFs.end(); vit != vend; vit++)
             {
                 KeyFrame* pKFi = *vit;
 
@@ -476,7 +476,7 @@ namespace ORB_SLAM2
             }
 
             // Correct all MapPoints obsrved by current keyframe and neighbors, so that they align with the other side of the loop
-            for (KeyFrameAndPose::iterator mit = CorrectedSim3.begin(), mend = CorrectedSim3.end(); mit != mend; mit++)
+            for (auto mit = CorrectedSim3.begin(), mend = CorrectedSim3.end(); mit != mend; mit++)
             {
                 KeyFrame* pKFi = mit->first;
                 g2o::Sim3 g2oCorrectedSiw = mit->second;
@@ -551,7 +551,7 @@ namespace ORB_SLAM2
         //map<KeyFrame *, set<KeyFrame *>> LoopConnections;
         unordered_map<KeyFrame*, unordered_map<KeyFrame*, int>> LoopConnections;
 
-        for (vector<KeyFrame*>::iterator vit = mvpCurrentConnectedKFs.begin(), vend = mvpCurrentConnectedKFs.end(); vit != vend; vit++)
+        for (auto vit = mvpCurrentConnectedKFs.begin(), vend = mvpCurrentConnectedKFs.end(); vit != vend; vit++)
         {
             KeyFrame* pKFi = *vit;
             vector<KeyFrame*> vpPreviousNeighbors = pKFi->GetVectorCovisibleKeyFrames();

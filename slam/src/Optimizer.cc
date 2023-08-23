@@ -959,7 +959,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
             // Covisibility graph edges
             const vector<KeyFrame*> vpConnectedKFs = pKF->GetCovisiblesByWeight(minFeat);
-            for (vector<KeyFrame*>::const_iterator vit = vpConnectedKFs.begin(); vit != vpConnectedKFs.end(); vit++)
+            for (auto vit = vpConnectedKFs.begin(); vit != vpConnectedKFs.end(); vit++)
             {
                 KeyFrame* pKFn = *vit;
                 //cout << "OptimizeEssentialGraph. Covisibility" << endl;
@@ -1261,7 +1261,6 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
 
         return nIn;
     }
-
 } //namespace ORB_SLAM
 
 

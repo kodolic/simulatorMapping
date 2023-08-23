@@ -121,7 +121,7 @@ void KeyFrameDatabase::add(KeyFrame *pKF)
 
     // std::cout << "Adding keyframes to database." << std::endl;
 
-    for(DBoW2::BowVector::const_iterator vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(auto vit= pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
         mvInvertedFile[vit->first].push_back(pKF);
 }
 
@@ -130,7 +130,7 @@ void KeyFrameDatabase::erase(KeyFrame* pKF)
     unique_lock<mutex> lock(mMutex);
 
     // Erase elements in the Inverse File for the entry
-    for(DBoW2::BowVector::const_iterator vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
+    for(auto vit=pKF->mBowVec.begin(), vend=pKF->mBowVec.end(); vit!=vend; vit++)
     {
         // List of keyframes that share the word
         vector<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
@@ -279,7 +279,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
     {
         unique_lock<mutex> lock(mMutex);
         
-        for(DBoW2::BowVector::const_iterator vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
+        for(auto vit=F->mBowVec.begin(), vend=F->mBowVec.end(); vit != vend; vit++)
         {
             
             vector<KeyFrame*> &lKFs =   mvInvertedFile[vit->first];
@@ -336,7 +336,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
     if (lScoreAndMatch.empty())
         return vector<KeyFrame*>();
 
-    list<pair<float, KeyFrame*> > lAccScoreAndMatch;
+    vector<pair<float, KeyFrame*> > lAccScoreAndMatch;
     float bestAccScore = 0;
 
     // Lets now accumulate score by covisibility
@@ -368,10 +368,10 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
 
     // Return all those keyframes with a score higher than 0.75*bestScore
     float minScoreToRetain = 0.75f * bestAccScore;
-    set<KeyFrame*> spAlreadyAddedKF;
+    unordered_map<KeyFrame*,float> spAlreadyAddedKF;
     vector<KeyFrame*> vpRelocCandidates;
     vpRelocCandidates.reserve(lAccScoreAndMatch.size());
-    for (list<pair<float, KeyFrame*> >::iterator it = lAccScoreAndMatch.begin(), itend = lAccScoreAndMatch.end(); it != itend; it++)
+    for (auto it = lAccScoreAndMatch.begin(), itend = lAccScoreAndMatch.end(); it != itend; it++)
     {
         const float& si = it->first;
         if (si > minScoreToRetain)
@@ -380,7 +380,7 @@ vector<KeyFrame*> KeyFrameDatabase::DetectRelocalizationCandidates(Frame *F)
             if (!spAlreadyAddedKF.count(pKFi))
             {
                 vpRelocCandidates.push_back(pKFi);
-                spAlreadyAddedKF.insert(pKFi);
+                spAlreadyAddedKF.insert({ pKFi ,it->first});
             }
         }
     }
