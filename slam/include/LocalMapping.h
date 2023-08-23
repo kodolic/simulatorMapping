@@ -105,11 +105,11 @@ protected:
     LoopClosing* mpLoopCloser;
     Tracking* mpTracker;
 
-    std::unordered_map<KeyFrame*,int> mlNewKeyFrames;
+    std::deque<KeyFrame*> mlNewKeyFrames;
 
     KeyFrame* mpCurrentKeyFrame;
 
-    std::unordered_map<MapPoint*,int> mlpRecentAddedMapPoints;
+    std::vector<MapPoint*> mlpRecentAddedMapPoints;
 
     std::mutex mMutexNewKFs;
 

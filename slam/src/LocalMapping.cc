@@ -131,7 +131,7 @@ namespace ORB_SLAM2
     void LocalMapping::InsertKeyFrame(KeyFrame *pKF)
     {
         unique_lock<mutex> lock(mMutexNewKFs);
-        mlNewKeyFrames.insert({ pKF,0 });
+        mlNewKeyFrames.push_back(pKF);
         mbAbortBA = true;
     }
 
@@ -143,10 +143,10 @@ namespace ORB_SLAM2
 
     void LocalMapping::ProcessNewKeyFrame()
     {
-        {
+        {//deque Provides efficient insertion and deletion at both ends (front and back)
             unique_lock<mutex> lock(mMutexNewKFs);
-            mpCurrentKeyFrame = mlNewKeyFrames.begin()->first;
-            mlNewKeyFrames.erase(mlNewKeyFrames.begin());
+            mpCurrentKeyFrame = mlNewKeyFrames.front();
+            mlNewKeyFrames.pop_front();
         }
 
         // Compute Bags of Words structures
@@ -170,7 +170,7 @@ namespace ORB_SLAM2
                     }
                     else // this can only happen for new stereo points inserted by the Tracking
                     {
-                        mlpRecentAddedMapPoints.insert({ pMP ,0 });
+                        mlpRecentAddedMapPoints.push_back(pMP);
                     }
                 }
             }
@@ -186,13 +186,13 @@ namespace ORB_SLAM2
     void LocalMapping::MapPointCulling()
     {
         // Check Recent Added MapPoints
-        unordered_map<MapPoint *,int>::iterator lit = mlpRecentAddedMapPoints.begin();
+        vector<MapPoint*>::iterator lit = mlpRecentAddedMapPoints.begin();
         const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
         const int cnThObs = mbMonocular ? 2 : 3;
 
         while (lit != mlpRecentAddedMapPoints.end())
         {
-            MapPoint* pMP = lit->first;
+            MapPoint* pMP = *lit;
 
             if (pMP->isBad()) {
                 lit = mlpRecentAddedMapPoints.erase(lit);
@@ -448,8 +448,7 @@ namespace ORB_SLAM2
                 pMP->UpdateNormalAndDepth();
 
                 mpMap->AddMapPoint(pMP);
-                mlpRecentAddedMapPoints.insert({ pMP,0 });
-
+                mlpRecentAddedMapPoints.push_back(pMP);
                 nnew++;
             }
         }
@@ -592,7 +591,7 @@ namespace ORB_SLAM2
             return;
         mbStopped = false;
         mbStopRequested = false;
-        mlNewKeyFrames.clear(); //rempved the delete, in unordered_map we dont need to take care of dellocatoion memory
+        mlNewKeyFrames.clear(); //rempved the delete, in deque we dont need to take care of dellocatoion memory
 
         cout << "Local Mapping RELEASE" << endl;
     }
