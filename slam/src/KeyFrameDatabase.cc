@@ -155,8 +155,6 @@ void KeyFrameDatabase::clear()
 
 vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float minScore)
 {
-    auto start = std::chrono::high_resolution_clock::now();
-    std:: cout << "hi" << endl;
     unordered_map<KeyFrame*, int> spConnectedKeyFrames = pKF->GetConnectedKeyFrames();
     vector <KeyFrame*> lKFsSharingWords;
   
@@ -267,15 +265,6 @@ vector<KeyFrame*> KeyFrameDatabase::DetectLoopCandidates(KeyFrame* pKF, float mi
             }
         }
     }
-    auto end = std::chrono::high_resolution_clock::now();
-
-    // Calculate the duration
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-    // Output the runtime in milliseconds
-  std::cout << "DetectLoopCandidates runtime: " << duration.count() << " milliseconds" <<endl;
-   std::cout << "its working" << endl;
-
     return vpLoopCandidates;
 }
 

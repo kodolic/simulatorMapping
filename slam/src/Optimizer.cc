@@ -784,7 +784,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* pCurKF,
     const LoopClosing::KeyFrameAndPose& NonCorrectedSim3,
     const LoopClosing::KeyFrameAndPose& CorrectedSim3,
-    const map<KeyFrame*, unordered_map<KeyFrame*, int> >& LoopConnections, const bool& bFixScale)
+    const unordered_map<KeyFrame*, unordered_map<KeyFrame*, int> >& LoopConnections, const bool& bFixScale)
 {
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
@@ -854,7 +854,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
     const Eigen::Matrix<double, 7, 7> matLambda = Eigen::Matrix<double, 7, 7>::Identity();
 
     // Set Loop edges
-    for (map<KeyFrame*, unordered_map<KeyFrame*, int> >::const_iterator mit = LoopConnections.begin(), mend = LoopConnections.end(); mit != mend; mit++)
+    for (auto mit = LoopConnections.begin(), mend = LoopConnections.end(); mit != mend; mit++)
     {
         KeyFrame* pKF = mit->first;
         const long unsigned int nIDi = pKF->mnId;
@@ -862,7 +862,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
         const g2o::Sim3 Siw = vScw[nIDi];
         const g2o::Sim3 Swi = Siw.inverse();
 
-        for (unordered_map<KeyFrame*, int>::const_iterator sit = spConnections.begin(), send = spConnections.end(); sit != send; sit++)
+        for (auto sit = spConnections.begin(), send = spConnections.end(); sit != send; sit++)
         {
             const long unsigned int nIDj = sit->first->mnId;
             if ((nIDi != pCurKF->mnId || nIDj != pLoopKF->mnId) && pKF->GetWeight(sit->first) < minFeat) {
@@ -930,10 +930,10 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
             }
 
             // Loop edges
-            const set<KeyFrame*> sLoopEdges = pKF->GetLoopEdges();
-            for (set<KeyFrame*>::const_iterator sit = sLoopEdges.begin(), send = sLoopEdges.end(); sit != send; sit++)
+            const unordered_map<KeyFrame*,int> sLoopEdges = pKF->GetLoopEdges();
+            for (auto sit = sLoopEdges.begin(), send = sLoopEdges.end(); sit != send; sit++)
             {
-                KeyFrame* pLKF = *sit;
+                KeyFrame* pLKF = sit->first;
                 if (pLKF->mnId < pKF->mnId)
                 {
                     g2o::Sim3 Slw;

@@ -635,7 +635,7 @@ namespace ORB_SLAM2
         vector<KeyFrame *> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
         cv::Point3f current_pos(mpCurrentKeyFrame->GetCameraCenter());
 
-        for (vector<KeyFrame *>::iterator vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end(); vit != vend; vit++)
+        for (auto vit = vpLocalKeyFrames.begin(), vend = vpLocalKeyFrames.end(); vit != vend; vit++)
         {
             KeyFrame *pKF = *vit;
             // cv::Point3f pkf_pos(pKF->GetCameraCenter());

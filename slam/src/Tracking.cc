@@ -1369,10 +1369,10 @@ namespace ORB_SLAM2
                 }
             }
 
-            const set<KeyFrame *> spChilds = pKF->GetChilds();
-            for (set<KeyFrame *>::const_iterator sit = spChilds.begin(), send = spChilds.end(); sit != send; sit++)
+            const unordered_map<KeyFrame *,int> spChilds = pKF->GetChilds();
+            for (auto sit = spChilds.begin(), send = spChilds.end(); sit != send; sit++)
             {
-                KeyFrame *pChildKF = *sit;
+                KeyFrame *pChildKF = sit->first;
                 if (!pChildKF->isBad())
                 {
                     if (pChildKF->mnTrackReferenceForFrame != mCurrentFrame.mnId)

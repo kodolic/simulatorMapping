@@ -549,7 +549,7 @@ namespace ORB_SLAM2
 
         // After the MapPoint fusion, new links in the covisibility graph will appear attaching both sides of the loop
         //map<KeyFrame *, set<KeyFrame *>> LoopConnections;
-        map<KeyFrame*, unordered_map<KeyFrame*, int>> LoopConnections;
+        unordered_map<KeyFrame*, unordered_map<KeyFrame*, int>> LoopConnections;
 
         for (vector<KeyFrame*>::iterator vit = mvpCurrentConnectedKFs.begin(), vend = mvpCurrentConnectedKFs.end(); vit != vend; vit++)
         {
@@ -559,11 +559,11 @@ namespace ORB_SLAM2
             // Update connections. Detect new links.
             pKFi->UpdateConnections();
             LoopConnections[pKFi] = pKFi->GetConnectedKeyFrames();
-            for (vector<KeyFrame*>::iterator vit_prev = vpPreviousNeighbors.begin(), vend_prev = vpPreviousNeighbors.end(); vit_prev != vend_prev; vit_prev++)
+            for (auto vit_prev = vpPreviousNeighbors.begin(), vend_prev = vpPreviousNeighbors.end(); vit_prev != vend_prev; vit_prev++)
             {
                 LoopConnections[pKFi].erase(*vit_prev);
             }
-            for (vector<KeyFrame*>::iterator vit2 = mvpCurrentConnectedKFs.begin(), vend2 = mvpCurrentConnectedKFs.end(); vit2 != vend2; vit2++)
+            for (auto vit2 = mvpCurrentConnectedKFs.begin(), vend2 = mvpCurrentConnectedKFs.end(); vit2 != vend2; vit2++)
             {
                 LoopConnections[pKFi].erase(*vit2);
             }
@@ -686,14 +686,14 @@ namespace ORB_SLAM2
                     if (!pKF)
                         continue;
 
-                    const set<KeyFrame*> sChilds = pKF->GetChilds();
+                    const unordered_map<KeyFrame*,int> sChilds = pKF->GetChilds();
 
                     cv::Mat Twc = pKF->GetPoseInverse();
 
-                    for (set<KeyFrame*>::const_iterator sit = sChilds.begin(); sit != sChilds.end(); sit++)
+                    for (auto sit = sChilds.begin(); sit != sChilds.end(); sit++)
                     {
 
-                        KeyFrame* pChild = *sit;
+                        KeyFrame* pChild = sit->first;
                         if (!pChild)
                             continue;
 
