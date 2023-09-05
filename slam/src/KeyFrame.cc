@@ -955,7 +955,10 @@ namespace ORB_SLAM2
     void KeyFrame::EraseMapPointMatch(MapPoint *pMP)
     {
         int idx = pMP->GetIndexInKeyFrame(this);
-            mvpMapPoints[idx] = idx >= 0? static_cast<MapPoint *>(NULL): mvpMapPoints[idx];
+        if (idx >= mvpMapPoints.size()||idx<0)
+            return;
+        else
+            mvpMapPoints[idx] =  static_cast<MapPoint *>(NULL);
     }
 
     void KeyFrame::ReplaceMapPointMatch(const size_t &idx, MapPoint *pMP)
